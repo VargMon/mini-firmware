@@ -20,6 +20,10 @@ Copyright (C) 2008, 2009	Sven Peter <svenpeter@gmail.com>
 #include "utils.h"
 #include "memory.h"
 
+#ifdef CAN_HAZ_IRQ
+#include "irq.h"
+#endif
+
 //#define SDMMC_DEBUG
 
 #ifdef SDMMC_DEBUG
@@ -531,10 +535,27 @@ int sdmmc_get_sectors(struct device *dev)
 }
 #endif
 
+int sdmmc_discovered;
+int sdmmc_honor_card_events;
+
+void sdmmc_discover(struct device *dev)
+{
+#ifdef CAN_HAZ_IRQ
+	irq_enable(IRQ_SDHC);
+#endif
+	sdmmc_needs_discover(dev);
+	sdmmc_discovered = 1;
+	sdmmc_honor_card_events = 1;
+}
+
 #ifdef CAN_HAZ_IPC
 void sdmmc_ipc(volatile ipc_request *req)
 {
 	int ret;
+
+	if (!sdmmc_discovered)
+		sdmmc_discover(SDMMC_DEFAULT_DEVICE);
+
 	switch (req->req) {
 	case IPC_SDMMC_ACK:
 		ret = sdmmc_ack_card(SDMMC_DEFAULT_DEVICE);

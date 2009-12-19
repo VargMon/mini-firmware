@@ -17,10 +17,14 @@ Copyright (C) 2009			Andre Heider "dhewg" <dhewg@wiibrew.org>
 #include "utils.h"
 #include "start.h"
 #include "gecko.h"
+#include "sdhcvar.h"
 
 void powerpc_upload_stub(u32 entry)
 {
 	u32 i;
+
+	// First, kill SDHC now.
+	sdhc_exit();
 
 	set32(HW_EXICTRL, EXICTRL_ENABLE_EXI);
 

@@ -181,4 +181,7 @@ struct sdmmc_attach_args {
 #define	SDMMC_ASSERT_LOCKED(sc) \
 	KASSERT(lockstatus(&((sc))->sc_lock) == LK_EXCLUSIVE)
 
+extern int sdmmc_discovered;
+extern int sdmmc_honor_card_events;
+
 #endif

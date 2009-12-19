@@ -971,8 +971,11 @@ sdhc_intr(void *arg)
 		 if (ISSET(status, SDHC_CARD_REMOVAL|SDHC_CARD_INSERTION)) {
 			// this pushes a request to the slow queue so that we
 			// don't block other IRQs.
-			ipc_enqueue_slow(IPC_DEV_SDHC, IPC_SDHC_DISCOVER, 1,
-							(u32) hp->sdmmc);
+			if (sdmmc_honor_card_events) {
+				ipc_enqueue_slow(IPC_DEV_SDHC,
+						 IPC_SDHC_DISCOVER, 1,
+						 (u32) hp->sdmmc);
+			}
 		}
 #endif
 
@@ -1054,6 +1057,7 @@ void sdhc_exit(void)
 	irq_disable(IRQ_SDHC);
 #endif
 	sdhc_shutdown(&__softc);
+	sdmmc_honor_card_events = 0;
 }
 
 #ifdef CAN_HAZ_IPC
@@ -1061,7 +1065,7 @@ void sdhc_ipc(volatile ipc_request *req)
 {
 	switch (req->req) {
 	case IPC_SDHC_DISCOVER:
-		sdmmc_needs_discover((struct device *)req->args[0]);
+		sdmmc_discover((struct device *)req->args[0]);
 		break;
 	case IPC_SDHC_EXIT:
 		sdhc_exit();

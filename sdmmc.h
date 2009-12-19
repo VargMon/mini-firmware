@@ -30,6 +30,7 @@ Copyright (C) 2008, 2009	Sven Peter <svenpeter@gmail.com>
 
 struct device *sdmmc_attach(struct sdmmc_chip_functions *functions,
 		sdmmc_chipset_handle_t handle, const char *name, int no);
+void sdmmc_discover(struct device *dev);
 void sdmmc_needs_discover(struct device *dev);
 int sdmmc_select(struct device *dev);
 int sdmmc_check_card(struct device *dev);
