@@ -16,14 +16,16 @@ Copyright (C) 2008, 2009	Hector Martin "marcan" <marcan@marcansoft.com>
 #include "gpio.h"
 #include "hollywood.h"
 
-#ifndef LOADER
+#include <stdarg.h>
+
+#if defined(CAN_HAZ_USBGECKO) && !defined(LOADER) && !defined(NDEBUG)
 static char ascii(char s) {
   if(s < 0x20) return '.';
   if(s > 0x7E) return '.';
   return s;
 }
 
-void hexdump(void *d, int len) {
+void hexdump(const void *d, int len) {
   u8 *data;
   int i, off;
   data = (u8*)d;
@@ -41,6 +43,17 @@ void hexdump(void *d, int len) {
   }
 }
 #endif
+
+int sprintf(char *buffer, const char *fmt, ...)
+{
+	va_list args;
+	int i;
+
+	va_start(args, fmt);
+	i = vsprintf(buffer, fmt, args);
+	va_end(args);
+	return i;
+}
 
 void udelay(u32 d)
 {

@@ -10,6 +10,7 @@ Copyright (C) 2009		Andre Heider "dhewg" <dhewg@wiibrew.org>
 # This code is licensed to you under the terms of the GNU GPL, version 2;
 # see file COPYING or http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 */
+#ifdef CAN_HAZ_USBGECKO
 
 #include "types.h"
 #include "irq.h"
@@ -23,8 +24,7 @@ Copyright (C) 2009		Andre Heider "dhewg" <dhewg@wiibrew.org>
 #include "powerpc_elf.h"
 #include "gecko.h"
 
-//#define GECKO_SAFE
-
+static u8 gecko_found = 0;
 static u8 gecko_console_enabled = 0;
 
 static u32 _gecko_command(u32 command)
@@ -55,6 +55,7 @@ static u32 _gecko_getid(void)
 	return i;
 }
 
+#ifndef NDEBUG
 static u32 _gecko_sendbyte(u8 sendbyte)
 {
 	u32 i = 0;
@@ -63,6 +64,7 @@ static u32 _gecko_sendbyte(u8 sendbyte)
 		return 1; // Return 1 if byte was sent
 	return 0;
 }
+#endif
 
 static u32 _gecko_recvbyte(u8 *recvbyte)
 {
@@ -77,7 +79,7 @@ static u32 _gecko_recvbyte(u8 *recvbyte)
 	return 0;
 }
 
-#ifdef GECKO_SAFE
+#if !defined(NDEBUG) && defined(GECKO_SAFE)
 static u32 _gecko_checksend(void)
 {
 	u32 i = 0;
@@ -134,7 +136,7 @@ static int gecko_recvbuffer(void *buffer, u32 size)
 }
 #endif
 
-#ifndef GECKO_SAFE
+#if !defined(NDEBUG) && !defined(GECKO_SAFE)
 static int gecko_sendbuffer(const void *buffer, u32 size)
 {
 	u32 left = size;
@@ -143,6 +145,12 @@ static int gecko_sendbuffer(const void *buffer, u32 size)
 	while(left>0) {
 		if(!_gecko_sendbyte(*ptr))
 			break;
+		if(*ptr == '\n') {
+#ifdef GECKO_LFCR
+			_gecko_sendbyte('\r');
+#endif
+			break;
+		}
 		ptr++;
 		left--;
 	}
@@ -168,7 +176,7 @@ static int gecko_recvbuffer_safe(void *buffer, u32 size)
 }
 #endif
 
-#ifdef GECKO_SAFE
+#if !defined(NDEBUG) && defined(GECKO_SAFE)
 static int gecko_sendbuffer_safe(const void *buffer, u32 size)
 {
 	u32 left = size;
@@ -181,6 +189,12 @@ static int gecko_sendbuffer_safe(const void *buffer, u32 size)
 		if(_gecko_checksend()) {
 			if(!_gecko_sendbyte(*ptr))
 				break;
+			if(*ptr == '\n') {
+#ifdef GECKO_LFCR
+				_gecko_sendbyte('\r');
+#endif
+				break;
+			}
 			ptr++;
 			left--;
 		}
@@ -194,12 +208,11 @@ void gecko_init(void)
 	write32(EXI0_CSR, 0);
 	write32(EXI1_CSR, 0);
 	write32(EXI2_CSR, 0);
-	write32(EXI0_CSR, 0x2000);
-	write32(EXI0_CSR, 3<<10);
-	write32(EXI1_CSR, 3<<10);
 
 	if (!gecko_isalive())
 		return;
+
+	gecko_found = 1;
 
 	gecko_flush();
 	gecko_console_enabled = 1;
@@ -256,16 +269,11 @@ static u32 _gecko_receive_left = 0;
 static u32 _gecko_receive_len = 0;
 static u8 *_gecko_receive_buffer = NULL;
 
-void gecko_timer_initialize(void)
-{
-	if (!gecko_isalive())
-		return;
-
-	irq_set_alarm(20, 1);
-}
-
-void gecko_timer(void) {
+void gecko_process(void) {
 	u8 b;
+
+	if (!gecko_found)
+		return;
 
 	if (_gecko_cmd_start_time && read32(HW_TIMER) >
 			(_gecko_cmd_start_time + IRQ_ALARM_MS2REG(5000)))
@@ -373,4 +381,6 @@ cleanup:
 	_gecko_cmd_start_time = 0;
 	_gecko_state = GECKO_STATE_NONE;
 }
+
+#endif
 

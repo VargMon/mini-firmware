@@ -15,7 +15,7 @@ Copyright (C) 2009		John Kelley <wiidev@kelley.ca>
 #include "utils.h"
 #include "start.h"
 #include "hollywood.h"
-#include "sdhcvar.h"
+#include "sdhc.h"
 #include "string.h"
 #include "memory.h"
 #include "gecko.h"
@@ -55,11 +55,11 @@ u32 _main(void *base)
 		read32(0xffffff0c), read32(0xffffff10), read32(0xffffff14));
 
 	irq_initialize();
-	irq_enable(IRQ_TIMER);
 //	irq_enable(IRQ_GPIO1B);
 	irq_enable(IRQ_GPIO1);
 	irq_enable(IRQ_RESET);
-	gecko_timer_initialize();
+	irq_enable(IRQ_TIMER);
+	irq_set_alarm(20, 1);
 	gecko_printf("Interrupts initialized\n");
 
 	crypto_initialize();
@@ -95,7 +95,9 @@ u32 _main(void *base)
 	res = powerpc_boot_file(PPC_BOOT_FILE);
 	if(res < 0) {
 		gecko_printf("Failed to boot PPC: %d\n", res);
-		gecko_printf("Continuing anyway\n");
+		gecko_printf("Booting System Menu\n");
+		vector = boot2_run(1, 2);
+		goto shutdown;
 	}
 
 	gecko_printf("Going into IPC mainloop...\n");

@@ -22,7 +22,7 @@ Copyright (C) 2009		John Kelley <wiidev@kelley.ca>
 #include "gecko.h"
 #include "ipc.h"
 #include "nand.h"
-#include "sdhcvar.h"
+#include "sdhc.h"
 #include "sdmmc.h"
 #include "crypto.h"
 #include "boot2.h"
@@ -30,7 +30,7 @@ Copyright (C) 2009		John Kelley <wiidev@kelley.ca>
 #include "panic.h"
 
 #define MINI_VERSION_MAJOR 1
-#define MINI_VERSION_MINOR 2
+#define MINI_VERSION_MINOR 3
 
 static volatile ipc_request in_queue[IPC_IN_SIZE] ALIGNED(32) MEM2_BSS;
 static volatile ipc_request out_queue[IPC_OUT_SIZE] ALIGNED(32) MEM2_BSS;
@@ -343,6 +343,8 @@ u32 ipc_process_slow(void)
 
 		if (!vector)
 		{
+			gecko_process();
+
 			u32 cookie = irq_kill();
 			if(slow_queue_head == slow_queue_tail)
 				irq_wait();

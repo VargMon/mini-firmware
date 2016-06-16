@@ -17,7 +17,7 @@ Copyright (C) 2009			Andre Heider "dhewg" <dhewg@wiibrew.org>
 #include "ipc.h"
 #include "crypto.h"
 #include "nand.h"
-#include "sdhcvar.h"
+#include "sdhc.h"
 
 static u32 _alarm_frequency = 0;
 
@@ -54,11 +54,9 @@ void irq_handler(void)
 	flags = flags & enabled;
 
 	if(flags & IRQF_TIMER) {
-		if (_alarm_frequency) {
-			// currently we use the alarm timer only for lame usbgecko polling
-			gecko_timer();
+		if (_alarm_frequency)
 			write32(HW_ALARM, read32(HW_TIMER) + _alarm_frequency);
-		}
+
 		write32(HW_ARMIRQFLAG, IRQF_TIMER);
 	}
 	if(flags & IRQF_NAND) {
